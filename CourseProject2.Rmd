@@ -1,0 +1,102 @@
+---
+title: "CourseProject2"
+author: "Bamini Balaji"
+date: "January 22, 2017"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Part 2: Toothgrowth Data Analysis
+
+Let us take a look at the toothgrowth data set:
+
+```{r ToothGrowth}
+# These are the first 5 lines of the dataset
+head(ToothGrowth)
+
+# The dimensions of the data set:
+dim(ToothGrowth)
+
+```
+
+This data shows length of tooth under different doses and different types of supplements for 60 specimen. 
+
+```{r}
+summary(ToothGrowth)
+table(ToothGrowth$supp, ToothGrowth$dose)
+```
+
+The tooth length ranges from 4.20 to 33.90. 
+
+Supplements are either orange juice (OJ) or vitamin C (VC). Dose values are 0.5, 1, 2. For each combination of supplement and dose, 10 subjects are tested. 
+
+This figure shows the tooth length (y-axis) versus supplement OJ or VC for the various dose levels. 
+
+```{r, echo=FALSE}
+library(ggplot2)
+m <- ggplot(ToothGrowth, aes(x = supp, y = len, fill = factor(dose)))
+m + geom_boxplot()
+```
+
+### OJ versus VC
+
+Does orange juice (OJ) stimulate tooth growth over vitamic C (VC)?
+
+```{r}
+with(ToothGrowth, t.test(len[supp == "VC"], len[supp == "OJ"]))
+pval <- with(ToothGrowth, t.test(len[supp == "VC"], len[supp == "OJ"]))$p.value
+```
+
+p-value > alpha. Hence null hypothesis that VC and OJ are equivalent is accepted
+
+Let's look at the data for a specific dose level of 0.5
+
+```{r}
+with(ToothGrowth, t.test(len[supp == "VC" & dose == 0.5], len[supp == "OJ" & dose == 0.5]))
+pval <- c(pval, with(ToothGrowth, t.test(len[supp == "VC" & dose == 0.5], len[supp == "OJ" & dose == 0.5]))$p.value)
+```
+Here p-value < alpha. The confidence interval does not encompass 0. Hence alternative hypothesis is accepted where the OJ and VC have different impact at 0.5 dose. In fact, since the values are negative in confidence interval range, it suggests that OJ > VC for 0.5 dose.
+
+Now, let's look at dose of 2.
+
+```{r}
+with(ToothGrowth, t.test(len[supp == "VC" & dose == 2], len[supp == "OJ" & dose == 2]))
+pval <- c(pval, with(ToothGrowth, t.test(len[supp == "VC" & dose == 2], len[supp == "OJ" & dose == 2]))$p.value)
+```
+In this case the null hypothesis is accepted. This suggests that at high doses, OJ and VC are equivalent.
+
+## Effect of dose level
+
+Let's compare a dose of 2 and a dose of 1 collectively regardless of supplement type. 
+```{r}
+with(ToothGrowth, t.test(len[dose == 2], len[dose == 1]))
+pval <- c(pval, with(ToothGrowth, t.test(len[dose == 2], len[dose == 1]))$p.value)
+```
+The data confirms that our null hypothesis is rejected. Dose level of 2 causes greater tooth length than dose level 1. 
+
+What about in the case of OJ at dose levels 2 and 1. These two data appear close.
+
+```{r}
+with(ToothGrowth, t.test(len[supp == "OJ" & dose == 2], len[supp == "OJ" & dose == 1]))
+
+pval <- c(pval, with(ToothGrowth, t.test(len[supp == "OJ" & dose == 2], len[supp == "OJ" & dose == 1]))$p.value)
+```
+In this instance as well, the data shows p-value > alpha. Hence null hypothesis is rejected suggesting these two groups are not equivalent. 
+
+
+Overall these tests suggest that dose level has a large impact. At low doses, OJ is more effective than VC. But at high doses this effect does not matter. 
+
+## Multiple Testing
+
+Since we have used this data for multiple testing, it would be advisable to avoid false discoveries. This can be done my using the BH correction. 
+
+```{r}
+pval
+
+p.adjust(pval, method = "BH")
+```
+The last test comparing tooth length with OJ at dose level 2 versus 1 is no longer showing a significant finding since p-value > alpha. Hence these two conditions would be considered equivalent.  
+
